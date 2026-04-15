@@ -1,5 +1,4 @@
 import express from 'express';
-import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 
@@ -20,23 +19,26 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, Postman)
-    if (!origin) return callback(null, true);
-    // Allow any localhost port in development
-    if (origin.match(/^http:\/\/localhost(:\d+)?$/)) return callback(null, true);
-    // Allow any Vercel deployment (*.vercel.app)
-    if (origin.match(/^https:\/\/.*\.vercel\.app$/)) return callback(null, true);
-    // Allow configured frontend URL
-    if (origin === process.env.FRONTEND_URL) return callback(null, true);
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
-app.options('*', cors()); // Handle preflight for all routes
+// Set CORS headers manually first — reliable on Vercel serverless
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowed =
+    !origin ||
+    /^http:\/\/localhost(:\d+)?$/.test(origin) ||
+    /^https:\/\/.*\.vercel\.app$/.test(origin) ||
+    origin === process.env.FRONTEND_URL;
+
+  if (allowed) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  }
+
+  // Respond immediately to preflight requests
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
 app.use(express.json());
 
 // ─── MongoDB Connection ───────────────────────────────────────────────────────
@@ -78,7 +80,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ─── Start Server ─────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`AyurClinic backend running on http://localhost:${PORT}`);
-});
+// ─── Start Server (local dev only — Vercel uses the exported app) ─────────────
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`AyurClinic backend running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;
