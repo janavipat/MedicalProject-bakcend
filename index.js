@@ -26,6 +26,8 @@ app.use(cors({
     if (!origin) return callback(null, true);
     // Allow any localhost port in development
     if (origin.match(/^http:\/\/localhost(:\d+)?$/)) return callback(null, true);
+    // Allow any Vercel deployment (*.vercel.app)
+    if (origin.match(/^https:\/\/.*\.vercel\.app$/)) return callback(null, true);
     // Allow configured frontend URL
     if (origin === process.env.FRONTEND_URL) return callback(null, true);
     callback(new Error('Not allowed by CORS'));
