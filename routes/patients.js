@@ -112,6 +112,19 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// DELETE /api/patients/cleanup-test — delete all patients whose name contains "test"
+router.delete('/cleanup-test', async (req, res) => {
+  try {
+    const testPatients = await Patient.find({ name: { $regex: 'test', $options: 'i' } });
+    const ids = testPatients.map(p => p._id);
+    await Prescription.deleteMany({ patientId: { $in: ids } });
+    const result = await Patient.deleteMany({ _id: { $in: ids } });
+    res.json({ deleted: result.deletedCount, message: `Deleted ${result.deletedCount} test patient(s) and their prescriptions.` });
+  } catch (err) {
+    res.status(500).json({ error: 'Cleanup failed' });
+  }
+});
+
 // DELETE /api/patients/:id — delete patient and all their data
 router.delete('/:id', async (req, res) => {
   try {
