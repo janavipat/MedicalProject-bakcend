@@ -12,6 +12,7 @@ import inventoryRoutes from './routes/inventory.js';
 import appointmentRoutes from './routes/appointments.js';
 import billingRoutes from './routes/billing.js';
 import followUpRoutes from './routes/followup.js';
+import contactRoutes from './routes/contact.js';
 
 dotenv.config();
 
@@ -68,6 +69,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/followup', followUpRoutes);
+app.use('/api/contact', contactRoutes);   // public — no verifyToken
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
